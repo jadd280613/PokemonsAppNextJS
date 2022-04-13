@@ -7,7 +7,9 @@ import {
   Container,
   Grid,
   Image,
+  Progress,
   Row,
+  Spacer,
   Text,
 } from '@nextui-org/react';
 import { GetStaticProps, GetStaticPaths, NextPage } from 'next';
@@ -124,7 +126,7 @@ const PokemonPage: NextPage<Props> = ({ pokemon }) => {
               </div>
               <div style={{ display: 'flex', alignContent: 'flex-start' }}>
                 <Text h4>
-                  Weight: {' '}
+                  Weight:{' '}
                   <Text span css={{ fontWeight: 'normal' }}>
                     {pokemon.weight} lb
                   </Text>
@@ -158,6 +160,39 @@ const PokemonPage: NextPage<Props> = ({ pokemon }) => {
                   </Text>
                 </Text>
               </div>
+              <Card.Image
+                src={
+                  `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.id}.png` ||
+                  '/no-image.png'
+                }
+                alt={pokemon.name}
+                width="100%"
+                height={200}
+              />
+            </Card.Body>
+          </Card>
+        </Grid>
+        <Grid xs={12} sm={8}>
+          <Card>
+            <Card.Header
+              css={{ display: 'flex', justifyContent: 'space-between' }}
+            >
+              <Text h2 transform="capitalize">
+                Base Stats
+              </Text>
+            </Card.Header>
+            <Card.Body>
+              {pokemon.stats.map((statics: any) => {
+                return (
+                  <>
+                    <Text transform="capitalize" size={16}>
+                      {statics.stat.name}
+                    </Text>
+                    <Progress color="primary" value={statics.base_stat} />
+                    <Spacer />
+                  </>
+                );
+              })}
             </Card.Body>
           </Card>
         </Grid>
@@ -167,21 +202,32 @@ const PokemonPage: NextPage<Props> = ({ pokemon }) => {
 };
 
 export const getStaticPaths: GetStaticPaths = async (ctx) => {
-  const pokemon151 = [...Array(151)].map((value, index) => `${index + 1}`);
+  const pokemons151 = [...Array(151)].map((value, index) => `${index + 1}`);
   return {
-    paths: pokemon151.map((id) => ({
+    paths: pokemons151.map((id) => ({
       params: { id },
     })),
-    fallback: false,
+    // fallback: false,
+    fallback: 'blocking',
   };
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const { id } = params as { id: string };
+  const pokemon = await getPokemonInfo(id);
+  if (!pokemon) {
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false,
+      },
+    };
+  }
   return {
     props: {
-      pokemon: await getPokemonInfo(id),
+      pokemon,
     },
+    revalidate: 86400,
   };
 };
 
